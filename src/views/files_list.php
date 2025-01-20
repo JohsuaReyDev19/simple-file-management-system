@@ -34,13 +34,13 @@ try {
 <div class="container mx-auto px-4 py-6 bg-gray-100 min-h-screen">
     <div class="bg-white rounded-lg shadow">
         <!-- Grid Layout -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4">
             <!-- Folders -->
             <?php foreach ($folders as $folder): ?>
-                <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 relative group">
-                    <i class="fas fa-folder text-yellow-400 text-4xl"></i>
+                <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 relative group">
+                    <i class="fas fa-folder text-yellow-400 text-6xl"></i>
                     <a href="?dir=<?= urlencode($current_dir ? $current_dir . '/' . $folder['name'] : $folder['name']) ?>" 
-                    class="text-gray-700 hover:text-blue-600 text-center mt-2 truncate w-full font-semibold">
+                    class="text-gray-700 hover:text-blue-600 text-center mt-2 truncate w-full text-sm font-semibold">
                         <?= htmlspecialchars($folder['name']) ?>
                     </a>
                     <div class="text-sm text-gray-500 mt-1"><?= date('Y-m-d', strtotime($folder['created_at'])) ?></div>
@@ -62,41 +62,61 @@ try {
 
             <!-- Files -->
             <?php foreach ($files as $file): ?>
-            <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 relative group">
-                <i class="fas fa-file text-gray-400 text-4xl"></i>
-                <a href="uploads/<?= htmlspecialchars($file['system_name']) ?>" target="_blank" 
-                   class="text-gray-700 hover:text-blue-600 text-center mt-2 truncate w-full font-semibold">
-                    <?= htmlspecialchars($file['name']) ?>
-                </a>
-                <div class="text-sm text-gray-500 mt-1"><?= formatSize($file['size']) ?></div>
-                <div class="text-sm text-gray-500"><?= date('Y-m-d', strtotime($file['uploaded_at'])) ?></div>
+                <div class="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-2 hover:bg-gray-100 relative group">
+                    <?php 
+                    // Get file extension to determine if it's an image
+                    $file_extension = strtolower(pathinfo($file['system_name'], PATHINFO_EXTENSION));
+                    $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
-                <!-- Actions -->
-                <div class="absolute top-2 right-2 hidden group-hover:flex flex-col gap-2">
-                    <button onclick="moveItem('file', <?= $file['id'] ?>)" class="text-gray-600 hover:text-blue-600" title="Move">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button onclick="renameItem('file', <?= $file['id'] ?>, '<?= htmlspecialchars($file['name']) ?>')" class="text-gray-600 hover:text-blue-600" title="Rename">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="showDeleteModal('file', <?= $file['id'] ?>)" class="text-gray-600 hover:text-red-600" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    if (in_array($file_extension, $image_extensions)): ?>
+                        <!-- Show image preview -->
+                        <a href="uploads/<?= htmlspecialchars($file['system_name']) ?>" target="_blank" class="w-full h-32 flex items-center justify-center">
+                            <img 
+                                src="uploads/<?= htmlspecialchars($file['system_name']) ?>" 
+                                alt="<?= htmlspecialchars($file['name']) ?>" 
+                                class="object-cover rounded-lg w-[150px] h-[100px] p-5 mr-2">
+                        </a>
+                    <?php else: ?>
+                        <!-- Default file icon -->
+                        <i class="fas fa-file text-gray-400 text-4xl"></i>
+                    <?php endif; ?>
+
+                    <!-- File Name -->
+                    <a href="uploads/<?= htmlspecialchars($file['system_name']) ?>" target="_blank" 
+                    class="text-gray-700 hover:text-blue-600 text-center truncate w-full font-semibold">
+                        <?= htmlspecialchars($file['name']) ?>
+                    </a>
+
+                    <!-- File Details -->
+                    <div class="text-[10px] text-gray-500"><?= formatSize($file['size']) ?></div>
+                    <div class="text-sm text-gray-500"><?= date('Y-m-d', strtotime($file['uploaded_at'])) ?></div>
+
+                    <!-- Actions -->
+                    <div class="absolute top-2 right-2 hidden group-hover:flex flex-col gap-2">
+                        <button onclick="moveItem('file', <?= $file['id'] ?>)" class="text-gray-600 hover:text-blue-600" title="Move">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button onclick="renameItem('file', <?= $file['id'] ?>, '<?= htmlspecialchars($file['name']) ?>')" class="text-gray-600 hover:text-blue-600" title="Rename">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="showDeleteModal('file', <?= $file['id'] ?>)" class="text-gray-600 hover:text-red-600" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
             <?php endforeach; ?>
+
 
             <!-- No Results -->
             <?php if (empty($folders) && empty($files)): ?>
             <div class="col-span-full text-center text-gray-500">
                 No items found.
             </div>
+
             <?php endif; ?>
         </div>
     </div>
 </div>
-
-
 
 <!-- Delete Modal -->
 <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 transition-opacity duration-300 opacity-0">
@@ -117,6 +137,7 @@ try {
         </div>
     </div>
 </div>
+
 <script>
 function showDeleteModal(type, id) {
     const modal = document.getElementById('deleteModal');
